@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
 const pool = require('../db/pool');
+require('dotenv').config();
 
 // Authenticates users
 router.get('/login', async (req, res) => {
@@ -8,7 +9,7 @@ router.get('/login', async (req, res) => {
         // User passes in username and password
         const {username, password} = req.query
         // Searches db for username and retrieves password
-        await pool("SELECT password FROM users WHERE username = $1;", [username])
+        await pool.query("SELECT password FROM users WHERE username = $1;", [username])
         .then(response => {
             const rows = response[0];
             if (rows.password) {
@@ -19,7 +20,7 @@ router.get('/login', async (req, res) => {
                     if (result) {
                         // if match, validated
                         // Retrieve user info and send it to user
-                        await pool("SELECT users.id, accounts.acc_id, accounts.balance, users.username FROM accounts JOIN users ON accounts.user_id = users.id WHERE users.username = $1;", [username])
+                        await pool.query("SELECT users.id, accounts.acc_id, accounts.balance, users.username FROM accounts JOIN users ON accounts.user_id = users.id WHERE users.username = $1;", [username])
                         .then(response => {
                             const rows = response[0];
                             res.json(rows);
@@ -43,7 +44,7 @@ router.post('/changeBalance', async (req, res) => {
     const {acc_id, newBalance} = req.body;
     try {
         // Sets new balance in account with passed in account id
-        await pool("UPDATE accounts SET balance = $1 WHERE acc_id = $2", [newBalance, acc_id])
+        await pool.query("UPDATE accounts SET balance = $1 WHERE acc_id = $2", [newBalance, acc_id])
         .then(response => {
             res.json('Balance Updated');
         })
@@ -55,10 +56,11 @@ router.post('/changeBalance', async (req, res) => {
 // Creates a new account
 router.post('/signup', async (req, res) => {
     try {
+        console.log(typeof(process.env.DB_PASSWORD));
         // passed in user data
         const {username, fname, lname, password, email} = req.body;
         // Checks to ensure username does not already exist
-        await pool("SELECT username FROM users WHERE username = $1;", [username])
+        await pool.query("SELECT username FROM users WHERE username = $1;", [username])
         .then(res => {
             if (res[0]) {
                 // Error we will be sending to User
@@ -66,7 +68,7 @@ router.post('/signup', async (req, res) => {
             }
         });
         // Checks to ensure email does not already exist
-        await pool("SELECT email FROM users WHERE email = $1;", [email])
+        await pool.query("SELECT email FROM users WHERE email = $1;", [email])
         .then(res => {
             if (res[0]) {
                 // Error we will be sending to User
@@ -85,14 +87,15 @@ router.post('/signup', async (req, res) => {
                 }
                 try {
                     // User is entered into database
-                    await pool("INSERT INTO users (username, password, email, fname, lname) VALUES ($1, $2, $3, $4, $5);", [username, password, email, fname, lname])
+                    await pool.query("INSERT INTO users (username, password, email, fname, lname) VALUES ($1, $2, $3, $4, $5);", [username, password, email, fname, lname])
                     .then(async () => {
-                        await pool("SELECT id FROM users WHERE username = $1", [username])
+                        await pool.query("SELECT id FROM users WHERE username = $1", [username])
                         .then(async (response) => {
-                            const rows = response;
+                            const rows = response.rows;
+                            console.log(rows[0]);
                             const id = rows[0].id;
                             // Creates accounts table for user
-                            await pool("INSERT INTO accounts (user_id, balance) VALUES ($1, $2);", [id, 200]);
+                            await pool.query("INSERT INTO accounts (user_id, balance) VALUES ($1, $2);", [id, 200]);
                         })
                     })
                     res.json('User "successfuly created"');
@@ -114,10 +117,10 @@ router.post('/addTransaction', async (req, res) => {
     try {
         const {acc_id, transCat, transName, transPrice, transDate, balance} = req.body;
         console.log(req.body);
-        await pool("INSERT INTO transactions (price, date, category, aid, item) VALUES ($1, $2, $3, $4, $5);", [transPrice, transDate, transCat, acc_id, transName])
+        await pool.query("INSERT INTO transactions (price, date, category, aid, item) VALUES ($1, $2, $3, $4, $5);", [transPrice, transDate, transCat, acc_id, transName])
         .then(async () => {
             const newBalance = balance - transPrice;
-            await pool("UPDATE accounts SET balance = $1 WHERE acc_id = $2", [newBalance, acc_id]);
+            await pool.query("UPDATE accounts SET balance = $1 WHERE acc_id = $2", [newBalance, acc_id]);
         })
     } catch(error) {
         console.error(error);
@@ -127,7 +130,7 @@ router.post('/addTransaction', async (req, res) => {
 router.get('/getTransactions', async (req, res) => {
     try {
         const {acc_id} = req.query;
-        await pool("SELECT * FROM transactions WHERE aid = $1;", [acc_id])
+        await pool.query("SELECT * FROM transactions WHERE aid = $1;", [acc_id])
         .then(response => {
             console.log(response);
             res.json(response);
