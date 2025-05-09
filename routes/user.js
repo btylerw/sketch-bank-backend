@@ -11,18 +11,18 @@ router.get('/login', async (req, res) => {
         // Searches db for username and retrieves password
         await pool.query("SELECT password FROM users WHERE username = $1;", [username])
         .then(response => {
-            const rows = response[0];
-            if (rows.password) {
+            const rows = response.rows;
+            if (rows[0].password) {
                 // Password pulled from database
-                const userPass = rows.password;
+                const userPass = rows[0].password;
                 // Compares entered password with password from database
                 bcrypt.compare(password, userPass, async function(err, result) {
                     if (result) {
                         // if match, validated
                         // Retrieve user info and send it to user
-                        await pool.query("SELECT users.id, accounts.acc_id, accounts.balance, users.username FROM accounts JOIN users ON accounts.user_id = users.id WHERE users.username = $1;", [username])
+                        await pool.query("SELECT users.id as user_id, accounts.id as acc_id, accounts.balance, users.username FROM accounts JOIN users ON accounts.user_id = users.id WHERE users.username = $1;", [username])
                         .then(response => {
-                            const rows = response[0];
+                            const rows = response.rows;
                             res.json(rows);
                         })
                     } else {
