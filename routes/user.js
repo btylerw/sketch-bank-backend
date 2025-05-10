@@ -56,13 +56,12 @@ router.post('/changeBalance', async (req, res) => {
 // Creates a new account
 router.post('/signup', async (req, res) => {
     try {
-        console.log(typeof(process.env.DB_PASSWORD));
         // passed in user data
         const {username, fname, lname, password, email} = req.body;
         // Checks to ensure username does not already exist
         await pool.query("SELECT username FROM users WHERE username = $1;", [username])
         .then(res => {
-            if (res[0]) {
+            if (res.rows[0]) {
                 // Error we will be sending to User
                 throw('Username already exists');
             }
@@ -70,7 +69,7 @@ router.post('/signup', async (req, res) => {
         // Checks to ensure email does not already exist
         await pool.query("SELECT email FROM users WHERE email = $1;", [email])
         .then(res => {
-            if (res[0]) {
+            if (res.rows[0]) {
                 // Error we will be sending to User
                 throw('Email already exists');
             }
