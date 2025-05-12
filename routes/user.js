@@ -52,7 +52,21 @@ router.post('/changeBalance', async (req, res) => {
         console.error(err);
         res.json('Issue updating balance');
     }
-})
+});
+
+router.get('/getBalance', async (req, res) => {
+    const {acc_id} = req.query;
+    try {
+        await pool.query('SELECT balance FROM accounts WHERE id = $1', [acc_id])
+        .then(response => {
+            const rows = response.rows;
+            res.json(rows);
+        })
+    } catch(err) {
+        console.error(err);
+    }
+});
+
 // Creates a new account
 router.post('/signup', async (req, res) => {
     try {
