@@ -20,7 +20,7 @@ router.get('/login', async (req, res) => {
                     if (result) {
                         // if match, validated
                         // Retrieve user info and send it to user
-                        await pool.query("SELECT users.id as user_id, accounts.id as acc_id, accounts.balance, users.username FROM accounts JOIN users ON accounts.user_id = users.id WHERE users.username = $1;", [username])
+                        await pool.query("SELECT users.id as user_id, users.fname, users.lname, accounts.id as acc_id, accounts.balance, users.username FROM accounts JOIN users ON accounts.user_id = users.id WHERE users.username = $1;", [username])
                         .then(response => {
                             const rows = response.rows;
                             res.json(rows);
@@ -114,12 +114,12 @@ router.post('/signup', async (req, res) => {
 
 router.post('/addTransaction', async (req, res) => {
     try {
-        const {acc_id, transCat, transName, transPrice, transDate, balance} = req.body;
+        const {acc_id, transName, transPrice, transDate, balance} = req.body;
         console.log(req.body);
-        await pool.query("INSERT INTO transactions (price, date, category, aid, item) VALUES ($1, $2, $3, $4, $5);", [transPrice, transDate, transCat, acc_id, transName])
+        await pool.query("INSERT INTO transactions (name, price, date, account_id) VALUES ($1, $2, $3, $4);", [transName, transPrice, transDate, acc_id])
         .then(async () => {
             const newBalance = balance - transPrice;
-            await pool.query("UPDATE accounts SET balance = $1 WHERE acc_id = $2", [newBalance, acc_id]);
+            await pool.query("UPDATE accounts SET balance = $1 WHERE id = $2", [newBalance, acc_id]);
         })
     } catch(error) {
         console.error(error);
@@ -129,10 +129,10 @@ router.post('/addTransaction', async (req, res) => {
 router.get('/getTransactions', async (req, res) => {
     try {
         const {acc_id} = req.query;
-        await pool.query("SELECT * FROM transactions WHERE aid = $1;", [acc_id])
+        await pool.query("SELECT id, date, name, price FROM transactions WHERE account_id = $1;", [acc_id])
         .then(response => {
-            console.log(response);
-            res.json(response);
+            const rows = response.rows;
+            res.json(rows);
         })
     } catch(err) {
         console.error(err);
