@@ -110,33 +110,4 @@ router.post('/signup', async (req, res) => {
         res.status(500).json({error: err});
     }
 });
-
-router.post('/addTransaction', async (req, res) => {
-    try {
-        const {acc_id, transName, transPrice, transDate, balance} = req.body;
-        await pool.query("INSERT INTO transactions (name, price, date, account_id) VALUES ($1, $2, $3, $4);", [transName, transPrice, transDate, acc_id])
-        .then(async () => {
-            const newBalance = balance - transPrice;
-            await pool.query("UPDATE accounts SET balance = $1 WHERE id = $2", [newBalance, acc_id]);
-        }).finally(() => {
-            res.status(200).json({message: 'Successfully added transaction'});
-        })
-    } catch(error) {
-        console.error(error);
-        res.status(500).json({error: 'Issue adding transaction'});
-    }
-});
-
-router.get('/getTransactions', async (req, res) => {
-    try {
-        const {acc_id} = req.query;
-        await pool.query("SELECT id, date, name, price FROM transactions WHERE account_id = $1;", [acc_id])
-        .then(response => {
-            const rows = response.rows;
-            res.json(rows);
-        })
-    } catch(err) {
-        console.error(err);
-    }
-})
 module.exports = router;
