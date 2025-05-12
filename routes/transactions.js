@@ -4,20 +4,25 @@ const pool = require('../db/pool');
 require('dotenv').config();
 
 const updateBalance = async (balance, amount, acc_id) => {
-    const newBalance = balance - amount;
+    const numBalance = Number(balance);
+    const newBalance = numBalance + amount;
     await pool.query("UPDATE accounts SET balance = $1 WHERE id = $2", [newBalance, acc_id]);
+}
+
+const insertTransaction = async (acc_id, transName, transPrice, transDate, balance) => {
+    await pool.query("INSERT INTO transactions (name, price, date, account_id) VALUES ($1, $2, $3, $4);", [transName, transPrice, transDate, acc_id])
+    .then(async () => {
+        await updateBalance(balance, transPrice, acc_id);
+    })
 }
 
 router.post('/addTransaction', async (req, res) => {
     try {
         const { acc_id, transName, transPrice, transDate, balance } = req.body;
-        await pool.query("INSERT INTO transactions (name, price, date, account_id) VALUES ($1, $2, $3, $4);", [transName, transPrice, transDate, acc_id])
-        .then(async () => {
-            await updateBalance(balance, transPrice, acc_id) 
-            .then(() => {
-                res.status(200).json({message: 'Successfully added transaction!'});
-            });
-        });
+        await insertTransaction(acc_id, transName, transPrice, transDate, balance)
+        .then(() => {
+            res.status(200).json('Transaction successfully added');
+        })
     } catch(err) {
         console.error(err);
         res.status(500).json({error: 'Issue adding transaction'});
@@ -41,11 +46,11 @@ router.post('/transferFunds', async (req, res) => {
     try {
         const { sender_id, receiver_id, amount, balance } = req.body;
         const receiverBalance = await pool.query("SELECT balance FROM accounts WHERE id = $1", [receiver_id]);
-        // Taking the negative of amount so that updateBalance will add to it
-        const newAmount = -amount;
         const recBalance = Number(receiverBalance.rows[0].balance);
-        await updateBalance(recBalance, newAmount, receiver_id);
-        await updateBalance(balance, amount, sender_id)
+        const negAmount = -amount;
+        // Creating new transactions for both accounts
+        await insertTransaction(receiver_id, 'Wire Transfer', amount, new Date(), recBalance);
+        await insertTransaction(sender_id, 'Wire Transfer', negAmount, new Date(), balance)
         .then(() => {
             res.status(200).json('Transfer successful'); 
         });

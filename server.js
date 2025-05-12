@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv').config({ path: '../.env' });
 const cors = require('cors');
 const userRouter = require('./routes/user');
+const transactionRouter = require('./routes/transactions');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +33,7 @@ app.use((req, res, next) => {
 	next();
 })
 app.use('/users', userRouter);
+app.use('/transactions', transactionRouter);
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 })
