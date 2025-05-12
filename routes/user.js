@@ -91,7 +91,6 @@ router.post('/signup', async (req, res) => {
                         await pool.query("SELECT id FROM users WHERE username = $1", [username])
                         .then(async (response) => {
                             const rows = response.rows;
-                            console.log(rows[0]);
                             const id = rows[0].id;
                             // Creates accounts table for user
                             await pool.query("INSERT INTO accounts (user_id, balance) VALUES ($1, $2);", [id, 200]);
@@ -115,14 +114,16 @@ router.post('/signup', async (req, res) => {
 router.post('/addTransaction', async (req, res) => {
     try {
         const {acc_id, transName, transPrice, transDate, balance} = req.body;
-        console.log(req.body);
         await pool.query("INSERT INTO transactions (name, price, date, account_id) VALUES ($1, $2, $3, $4);", [transName, transPrice, transDate, acc_id])
         .then(async () => {
             const newBalance = balance - transPrice;
             await pool.query("UPDATE accounts SET balance = $1 WHERE id = $2", [newBalance, acc_id]);
+        }).finally(() => {
+            res.status(200).json({message: 'Successfully added transaction'});
         })
     } catch(error) {
         console.error(error);
+        res.status(500).json({error: 'Issue adding transaction'});
     }
 });
 
