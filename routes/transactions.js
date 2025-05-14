@@ -1,21 +1,20 @@
 const router = require('express').Router();
-const bcrypt = require('bcrypt');
 const pool = require('../db/pool');
-require('dotenv').config();
 
-const updateBalance = async (balance, amount, acc_id) => {
-    const numBalance = Number(balance);
-    const newBalance = numBalance + amount;
-    await pool.query("UPDATE accounts SET balance = $1 WHERE id = $2", [newBalance, acc_id]);
+// Updates supplied account number's balance by a specified amount
+const updateBalance = async (amount, acc_id) => {
+    await pool.query("UPDATE accounts SET balance = balance + $1 WHERE id = $2", [amount, acc_id]);
 }
 
-const insertTransaction = async (acc_id, transName, transPrice, transDate, balance) => {
+// Creates a new transaction and updates that accounts balance accordingly
+const insertTransaction = async (acc_id, transName, transPrice, transDate) => {
     await pool.query("INSERT INTO transactions (name, price, date, account_id) VALUES ($1, $2, $3, $4);", [transName, transPrice, transDate, acc_id])
     .then(async () => {
-        await updateBalance(balance, transPrice, acc_id);
+        await updateBalance(transPrice, acc_id);
     })
 }
 
+// Endpoint that will call insertTransaction to create a new transaction entry
 router.post('/addTransaction', async (req, res) => {
     try {
         const { acc_id, transName, transPrice, transDate, balance } = req.body;
@@ -29,6 +28,7 @@ router.post('/addTransaction', async (req, res) => {
     }
 });
 
+// Endpoint that retrieves all of the transactional data and sends it to the user
 router.get('/getTransactions', async (req, res) => {
     try {
         const { acc_id } = req.query;
@@ -42,15 +42,17 @@ router.get('/getTransactions', async (req, res) => {
     }
 });
 
+// Endpoint that calls insertTransaction for both the receiver and sender
+// Removing the specified amount of funds from the sender's account
+// And adding the same amount to the receiver's fund
+// This will create new transactions for both accounts
 router.post('/transferFunds', async (req, res) => {
     try {
         const { sender_id, receiver_id, amount, balance } = req.body;
-        const receiverBalance = await pool.query("SELECT balance FROM accounts WHERE id = $1", [receiver_id]);
-        const recBalance = Number(receiverBalance.rows[0].balance);
         const negAmount = -amount;
         // Creating new transactions for both accounts
-        await insertTransaction(receiver_id, 'Wire Transfer', amount, new Date(), recBalance);
-        await insertTransaction(sender_id, 'Wire Transfer', negAmount, new Date(), balance)
+        await insertTransaction(receiver_id, 'Wire Transfer', amount, new Date());
+        await insertTransaction(sender_id, 'Wire Transfer', negAmount, new Date())
         .then(() => {
             res.status(200).json('Transfer successful'); 
         });

@@ -1,30 +1,24 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const dotenv = require('dotenv').config({ path: '../.env' });
-const cors = require('cors');
+const dotenv = require('dotenv').config();
 const userRouter = require('./routes/user');
 const transactionRouter = require('./routes/transactions');
 const scheduleRouter = require('./routes/scheduler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const corsOptions = {
-	origin: '*',
-	optionsSuccessStatus: 200
-}
-
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use((req, res, next) => {
-	res.setHeader("Access-Control-Allow-Origin", "*");
-	res.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT");
-	res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-	next();
-})
+
+// Setting up the different routes
+// userRouter will relate to user data
 app.use('/users', userRouter);
+// transactionRouter will relate to transactional data
 app.use('/transactions', transactionRouter);
+// scheduleRouter will aid in creating or deleting different cron jobs
 app.use('/schedule', scheduleRouter);
+// Server is now listening
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 })

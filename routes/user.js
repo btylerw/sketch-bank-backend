@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
 const pool = require('../db/pool');
-require('dotenv').config();
 
 // Authenticates users
 router.get('/login', async (req, res) => {
@@ -39,23 +38,9 @@ router.get('/login', async (req, res) => {
     }
 })
 
-// Allows user to change the balance in their account
-router.post('/changeBalance', async (req, res) => {
-    const {acc_id, newBalance} = req.body;
-    try {
-        // Sets new balance in account with passed in account id
-        await pool.query("UPDATE accounts SET balance = $1 WHERE acc_id = $2", [newBalance, acc_id])
-        .then(response => {
-            res.json('Balance Updated');
-        })
-    } catch(err) {
-        console.error(err);
-        res.json('Issue updating balance');
-    }
-});
-
+// Retrieves account balance
 router.get('/getBalance', async (req, res) => {
-    const {acc_id} = req.query;
+    const { acc_id } = req.query;
     try {
         await pool.query('SELECT balance FROM accounts WHERE id = $1', [acc_id])
         .then(response => {
@@ -71,7 +56,7 @@ router.get('/getBalance', async (req, res) => {
 router.post('/signup', async (req, res) => {
     try {
         // passed in user data
-        const {username, fname, lname, password, email} = req.body;
+        const { username, fname, lname, password, email } = req.body;
         // Checks to ensure username does not already exist
         await pool.query("SELECT username FROM users WHERE username = $1;", [username])
         .then(res => {
