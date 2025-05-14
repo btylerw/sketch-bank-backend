@@ -4,6 +4,7 @@ const dotenv = require('dotenv').config({ path: '../.env' });
 const cors = require('cors');
 const userRouter = require('./routes/user');
 const transactionRouter = require('./routes/transactions');
+const scheduleRouter = require('./routes/scheduler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +35,7 @@ app.use((req, res, next) => {
 })
 app.use('/users', userRouter);
 app.use('/transactions', transactionRouter);
+app.use('/schedule', scheduleRouter);
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 })
