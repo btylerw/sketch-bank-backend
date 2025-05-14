@@ -55,7 +55,6 @@ router.post('/transferFunds', async (req, res) => {
             res.status(200).json('Transfer successful'); 
         });
     } catch(err) {
-        console.log(err);
         res.status(500).json('Issue transferring funds');
     }
 });

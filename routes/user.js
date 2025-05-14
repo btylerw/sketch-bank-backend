@@ -117,8 +117,7 @@ router.post('/signup', async (req, res) => {
                     res.json('Issue creating user');
                 }
             })
-        })
-        console.log('User created!');
+        }) 
     } catch (err) {
         console.error(err);
         res.status(500).json({error: err});
